@@ -6,7 +6,7 @@ matplotlib
 scikit-image
 tensorflow==1.14.0
 tensorflow-gpu==1.14.0
-keras==2.1.0
+keras==2.1.5
 opencv-python
 h5py==2.10.0
 imgaug
