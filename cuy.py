@@ -68,9 +68,6 @@ class CuyConfig(Config):
     NUM_CLASSES = 1 + 1  # Background + cuy
 
     # Number of training steps per epoch
-    STEPS_PER_EPOCH = 1000
-
-    # Number of training steps per epoch
     STEPS_PER_EPOCH = 100
 
     # Skip detections with < 90% confidence
