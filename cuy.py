@@ -57,6 +57,9 @@ class CuyConfig(Config):
     # Give the configuration a recognizable name
     NAME = "cuy"
 
+    # NUMBER OF GPUs to use. When using only a CPU, this needs to be set to 1.
+    GPU_COUNT = 2
+
     # We use a GPU with 12GB memory, which can fit two images.
     # Adjust down if you use a smaller GPU.
     IMAGES_PER_GPU = 2
@@ -65,11 +68,17 @@ class CuyConfig(Config):
     NUM_CLASSES = 1 + 1  # Background + cuy
 
     # Number of training steps per epoch
+    STEPS_PER_EPOCH = 1000
+
+    # Number of training steps per epoch
     STEPS_PER_EPOCH = 100
 
     # Skip detections with < 90% confidence
     DETECTION_MIN_CONFIDENCE = 0.9
 
+    IMAGE_RESIZE_MODE = "square"
+    IMAGE_MIN_DIM = 600
+    IMAGE_MAX_DIM = 640
 
 ############################################################
 #  Dataset
