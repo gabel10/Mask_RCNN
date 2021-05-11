@@ -74,8 +74,12 @@ class CuyConfig(Config):
     DETECTION_MIN_CONFIDENCE = 0.9
 
     IMAGE_RESIZE_MODE = "square"
-    IMAGE_MIN_DIM = 600
+    IMAGE_MIN_DIM = 640
     IMAGE_MAX_DIM = 640
+    TRAIN_ROIS_PER_IMAGE = 100
+    MASK_SHAPE = [56, 56]
+    DETECTION_MAX_INSTANCES = 20
+    BACKBONE = "resnet50"
 
 ############################################################
 #  Dataset
