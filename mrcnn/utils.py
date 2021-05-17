@@ -205,6 +205,17 @@ def box_refinement_graph(box, gt_box):
     result = tf.stack([dy, dx, dh, dw], axis=1)
     return result
 
+def weight_refinement_graph(weight, gt_weight):
+    """ Compute refinement needed to transform weight to gt_weight.
+    weight and gt_weight are [N, (w)]
+    """
+    weight = tf.cast(weight, tf.float32)
+    gt_weight = tf.cast(gt_weight, tf.float32)
+    
+    dw = (gt_weight - weight) / 2000
+
+    result = tf.stack([dw], axis=1)
+    return result
 
 def box_refinement(box, gt_box):
     """Compute refinement needed to transform box to gt_box.
@@ -273,11 +284,12 @@ class Dataset(object):
             "name": class_name,
         })
 
-    def add_image(self, source, image_id, path, **kwargs):
+    def add_image(self, source, image_id, path, weight, **kwargs):
         image_info = {
             "id": image_id,
             "source": source,
             "path": path,
+            "weight" : weight
         }
         image_info.update(kwargs)
         self.image_info.append(image_info)

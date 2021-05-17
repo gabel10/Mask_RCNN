@@ -77,9 +77,11 @@ class CuyConfig(Config):
     IMAGE_MIN_DIM = 640
     IMAGE_MAX_DIM = 640
     TRAIN_ROIS_PER_IMAGE = 100
+    MINI_MASK_SHAPE = (112, 112)
     MASK_SHAPE = [56, 56]
     DETECTION_MAX_INSTANCES = 20
     BACKBONE = "resnet50"
+    FILE_WEIGHTS_CUY = ""
 
 ############################################################
 #  Dataset
@@ -87,23 +89,31 @@ class CuyConfig(Config):
 
 class CuyDataset(utils.Dataset):
 
-    def load_dataset(self, dataset_dir,subset):
+    def load_dataset(self, dataset_dir,subset, weightsFile):
         """Load a subset of the Cuy dataset.
         dataset_dir: Root directory of the dataset.
         """
         # Add classes. We have only one class to add.
         self.add_class("dataset", 1, "cuy")
 
+        # File with cuy weights
+        weights_labels = np.loadtxt(weightsFile, str)
+
         # Train or validation dataset?
         assert subset in ["train", "val"]
         dataset_dir = os.path.join(dataset_dir, subset)
 
+
         for i, filename in enumerate(os.listdir(dataset_dir)):
             if '.jpg' in filename:
                 image_id = filename[:-4]
+                weight_index = np.where(weights_labels == filename)
+                weight_data = weights_labels[weight_index[0][0]]
+                weight = float(weight_data[1])
                 self.add_image( 'dataset', 
                                 image_id=image_id,
-                                path=os.path.join(dataset_dir, filename))
+                                path=os.path.join(dataset_dir, filename),
+                                weight=weight)
 
 
     def load_mask(self, image_id):
@@ -113,7 +123,7 @@ class CuyDataset(utils.Dataset):
             one mask per instance.
         class_ids: a 1D array of class IDs of the instance masks.
         """
-        # If not a balloon dataset image, delegate to parent class.
+        # If not a cuy dataset image, delegate to parent class.
         info = self.image_info[image_id]
         if info["source"] != "dataset":
             return super(self.__class__, self).load_mask(image_id)
@@ -125,6 +135,15 @@ class CuyDataset(utils.Dataset):
         mask.append(m[:,:,3])
         mask = np.stack(mask, axis=-1)
         return mask, np.ones([mask.shape[-1]], dtype=np.int32)
+    
+    def load_weight(self, image_id):
+        """Generate instance weight for an image
+        Returns: weight of the cuy
+        """
+        info = self.image_info[image_id]
+        weight = []
+        weight.append(info[weight])
+        return weight
 
     def image_reference(self, image_id):
         """Return the path of the image."""
@@ -133,18 +152,21 @@ class CuyDataset(utils.Dataset):
             return info["path"]
         else:
             super(self.__class__, self).image_reference(image_id)
+    
+    def load_weight(selft, image_id):
+        "Return the weight of the image"
 
 
 def train(model):
     """Train the model."""
     # Training dataset.
     dataset_train = CuyDataset()
-    dataset_train.load_dataset(args.dataset, "train")
+    dataset_train.load_dataset(args.dataset, "train", args.cuyfile)
     dataset_train.prepare()
 
     # Validation dataset
     dataset_val = CuyDataset()
-    dataset_val.load_dataset(args.dataset, "val")
+    dataset_val.load_dataset(args.dataset, "val", args.cuyfile)
     dataset_val.prepare()
 
     # *** This training schedule is an example. Update to your needs ***
@@ -244,8 +266,11 @@ if __name__ == '__main__':
                         metavar="<command>",
                         help="'train' or 'splash'")
     parser.add_argument('--dataset', required=False,
-                        metavar="/path/to/balloon/dataset/",
-                        help='Directory of the Balloon dataset')
+                        metavar="/path/to/cuy/dataset/",
+                        help='Directory of the Cuy dataset')
+    parser.add_argument('--cuyfile', required=False,
+                        metavar="/path/to/cuy-weights.txt",
+                        help='File of the weight of the cuys')
     parser.add_argument('--weights', required=True,
                         metavar="/path/to/weights.h5",
                         help="Path to weights .h5 file or 'coco'")
@@ -263,13 +288,14 @@ if __name__ == '__main__':
 
     # Validate arguments
     if args.command == "train":
-        assert args.dataset, "Argument --dataset is required for training"
+        assert args.dataset, "Argument --dataset adn --cuyfile is required for training"
     elif args.command == "splash":
         assert args.image or args.video,\
                "Provide --image or --video to apply color splash"
 
     print("Weights: ", args.weights)
     print("Dataset: ", args.dataset)
+    print("Weight File: ", args.cuyfile)
     print("Logs: ", args.logs)
 
     # Configurations
